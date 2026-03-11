@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Лифт! 🛗</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  font-family: 'Nunito', sans-serif;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  background: #1a1a2e;
+}
+
+.game {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+}
+
+/* ══════ ELEVATOR VIEW (left side) ══════ */
+.elevator-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+  background: linear-gradient(180deg, #16213e 0%, #1a1a2e 100%);
+  position: relative;
+}
+
+/* ── Floor indicator ── */
+.floor-indicator {
+  background: #0a0a1a;
+  border: 3px solid #333;
+  border-radius: 12px;
+  padding: 6px 24px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 0 20px rgba(0,200,255,0.15), inset 0 0 20px rgba(0,0,0,0.5);
+  position: relative;
+  min-height: 50px;
+}
+
+.floor-indicator .arrow {
+  font-size: clamp(16px, 3vw, 24px);
+  color: #333;
+  transition: color 0.3s;
+}
+.floor-indicator .arrow.active-up { color: #4ade80; text-shadow: 0 0 10px #4ade80; }
+.floor-indicator .arrow.active-down { color: #f87171; text-shadow: 0 0 10px #f87171; }
+
+.floor-indicator .floor-num {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(28px, 5vw, 42px);
+  font-weight: 900;
+  color: #ff6b35;
+  text-shadow: 0 0 15px rgba(255,107,53,0.5);
+  min-width: 60px;
+  text-align: center;
+  letter-spacing: 2px;
+}
+
+/* ── Elevator shaft ── */
+.shaft {
+  flex: 1;
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+  background: #111;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 4px solid #444;
+  box-shadow: inset 0 0 40px rgba(0,0,0,0.8);
+}
+
+/* ── Scene behind doors ── */
+.scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s;
+  overflow: hidden;
+}
+
+.scene-number {
+  font-size: clamp(100px, 25vw, 200px);
+  font-weight: 900;
+  color: white;
+  text-shadow: 4px 4px 0 rgba(0,0,0,0.3);
+  line-height: 1;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: opacity 0.5s, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.scene-number.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.scene-emoji {
+  font-size: clamp(40px, 10vw, 70px);
+  margin-top: 8px;
+  opacity: 0;
+  transition: opacity 0.5s 0.2s;
+}
+
+.scene-emoji.visible { opacity: 1; }
+
+.scene-label {
+  font-size: clamp(16px, 4vw, 28px);
+  font-weight: 900;
+  color: rgba(255,255,255,0.9);
+  margin-top: 4px;
+  opacity: 0;
+  transition: opacity 0.5s 0.3s;
+}
+
+.scene-label.visible { opacity: 1; }
+
+/* floating scene decorations */
+.scene-deco {
+  position: absolute;
+  font-size: 30px;
+  opacity: 0;
+  transition: opacity 0.6s;
+  animation: float-deco 3s ease-in-out infinite;
+}
+.scene-deco.visible { opacity: 0.7; }
+
+@keyframes float-deco {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(10deg); }
+}
+
+/* ── Elevator doors ── */
+.door {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  z-index: 10;
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.door-left {
+  left: 0;
+  background: linear-gradient(90deg, #b0b0b0 0%, #d4d4d4 45%, #c0c0c0 50%, #a8a8a8 100%);
+  border-right: 2px solid #888;
+  transform: translateX(0);
+}
+
+.door-right {
+  right: 0;
+  background: linear-gradient(90deg, #a8a8a8 0%, #c0c0c0 50%, #d4d4d4 55%, #b0b0b0 100%);
+  border-left: 2px solid #888;
+  transform: translateX(0);
+}
+
+.door.open-left { transform: translateX(-96%); }
+.door.open-right { transform: translateX(96%); }
+
+.door-groove {
+  position: absolute;
+  top: 10%;
+  bottom: 10%;
+  width: 3px;
+  background: rgba(0,0,0,0.15);
+  border-radius: 2px;
+}
+
+.door-left .door-groove { right: 20%; }
+.door-right .door-groove { left: 20%; }
+
+.door-handle {
+  position: absolute;
+  top: 45%;
+  width: 6px;
+  height: 40px;
+  background: #999;
+  border-radius: 3px;
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+}
+
+.door-left .door-handle { right: 10%; }
+.door-right .door-handle { left: 10%; }
+
+/* ══════ CONTROL PANEL (right side) ══════ */
+.panel {
+  width: clamp(140px, 35vw, 220px);
+  background: linear-gradient(180deg, #2c2c3a 0%, #1e1e2e 100%);
+  border-left: 3px solid #444;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 8px;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.panel-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-align: center;
+  margin-top: 2px;
+}
+
+/* ── Floor buttons grid ── */
+.floor-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  flex: 1;
+}
+
+.floor-btn {
+  border: none;
+  border-radius: 14px;
+  font-family: 'Nunito', sans-serif;
+  font-size: clamp(18px, 4vw, 28px);
+  font-weight: 900;
+  color: white;
+  cursor: pointer;
+  position: relative;
+  text-shadow: 1px 2px 0 rgba(0,0,0,0.3);
+  box-shadow:
+    0 4px 0 rgba(0,0,0,0.25),
+    0 6px 12px rgba(0,0,0,0.2),
+    inset 0 1px 0 rgba(255,255,255,0.2);
+  transition: transform 0.1s, box-shadow 0.1s, filter 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  aspect-ratio: 1;
+}
+
+.floor-btn:active {
+  transform: translateY(3px);
+  box-shadow:
+    0 1px 0 rgba(0,0,0,0.25),
+    0 2px 6px rgba(0,0,0,0.2);
+}
+
+.floor-btn.lit {
+  filter: brightness(1.3);
+  box-shadow:
+    0 4px 0 rgba(0,0,0,0.25),
+    0 0 15px rgba(255,255,255,0.3);
+}
+
+.floor-btn::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 45%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 100%);
+  border-radius: 14px 14px 0 0;
+  pointer-events: none;
+}
+
+/* ── Control buttons (arrows + doors) ── */
+.control-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.ctrl-btn {
+  border: none;
+  border-radius: 12px;
+  font-size: clamp(18px, 3.5vw, 26px);
+  cursor: pointer;
+  background: #3a3a4a;
+  color: white;
+  box-shadow:
+    0 3px 0 rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.1);
+  transition: transform 0.1s, box-shadow 0.1s, background 0.2s;
+  padding: 10px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ctrl-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.3);
+}
+
+.ctrl-btn.lit { background: #5a5a7a; box-shadow: 0 3px 0 rgba(0,0,0,0.3), 0 0 12px rgba(150,150,255,0.3); }
+
+.ctrl-btn.arrow-up { background: #2d5a27; }
+.ctrl-btn.arrow-up.lit { background: #4ade80; box-shadow: 0 3px 0 rgba(0,0,0,0.3), 0 0 12px rgba(74,222,128,0.4); }
+
+.ctrl-btn.arrow-down { background: #5a2727; }
+.ctrl-btn.arrow-down.lit { background: #f87171; box-shadow: 0 3px 0 rgba(0,0,0,0.3), 0 0 12px rgba(248,113,113,0.4); }
+
+.ctrl-btn.door-open { background: #1e3a5a; }
+.ctrl-btn.door-open:active, .ctrl-btn.door-open.lit { background: #3b82f6; }
+
+.ctrl-btn.door-close { background: #1e3a5a; }
+.ctrl-btn.door-close:active, .ctrl-btn.door-close.lit { background: #3b82f6; }
+
+/* ══════ CELEBRATION ══════ */
+.particle {
+  position: fixed;
+  pointer-events: none;
+  z-index: 99;
+  font-size: 28px;
+  animation: particle-fly 1.4s ease-out forwards;
+}
+
+@keyframes particle-fly {
+  0% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0deg); }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.2) rotate(720deg); }
+}
+
+/* ══════ WALL TEXTURE ══════ */
+.shaft::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, transparent 0px, transparent 48px, rgba(255,255,255,0.03) 48px, rgba(255,255,255,0.03) 50px),
+    repeating-linear-gradient(90deg, transparent 0px, transparent 48px, rgba(255,255,255,0.03) 48px, rgba(255,255,255,0.03) 50px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ══════ RESPONSIVE ══════ */
+@media (max-width: 400px) {
+  .panel { width: 120px; min-width: 120px; padding: 6px 5px; gap: 5px; }
+  .floor-buttons { gap: 4px; }
+  .control-buttons { gap: 4px; }
+}
+
+@media (min-width: 700px) {
+  .shaft { max-width: 500px; }
+}
+</style>
+</head>
+<body>
+
+<div class="game">
+  <!-- Left: elevator view -->
+  <div class="elevator-view">
+    <div class="floor-indicator">
+      <div class="arrow" id="arrowUp">▲</div>
+      <div class="floor-num" id="displayNum">1</div>
+      <div class="arrow" id="arrowDown">▼</div>
+    </div>
+
+    <div class="shaft" id="shaft">
+      <div class="scene" id="scene"></div>
+      <div class="door door-left" id="doorLeft">
+        <div class="door-groove"></div>
+        <div class="door-handle"></div>
+      </div>
+      <div class="door door-right" id="doorRight">
+        <div class="door-groove"></div>
+        <div class="door-handle"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: control panel -->
+  <div class="panel">
+    <div class="panel-section-label">Этаж</div>
+    <div class="floor-buttons" id="floorButtons"></div>
+    <div class="panel-section-label" style="margin-top: 4px;">Управление</div>
+    <div class="control-buttons">
+      <button class="ctrl-btn arrow-up" id="btnUp" onclick="pressUp()">▲</button>
+      <button class="ctrl-btn arrow-down" id="btnDown" onclick="pressDown()">▼</button>
+      <button class="ctrl-btn door-open" id="btnDoorOpen" onclick="pressDoorOpen()">◄►</button>
+      <button class="ctrl-btn door-close" id="btnDoorClose" onclick="pressDoorClose()">►◄</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const FLOORS = 10;
+
+const FLOOR_DATA = [
+  { color: '#FF6B6B', bg: 'linear-gradient(135deg, #FFE0E0 0%, #FFB3B3 100%)', emoji: '🌺', label: 'Цветы', deco: ['🌸','🌷','🌻','🌹'] },
+  { color: '#FFA94D', bg: 'linear-gradient(135deg, #FFF0DB 0%, #FFD8A8 100%)', emoji: '🐱', label: 'Котики', deco: ['🐈','😺','🐾','🧶'] },
+  { color: '#FFD43B', bg: 'linear-gradient(135deg, #FFFDE0 0%, #FFE066 100%)', emoji: '🌈', label: 'Радуга', deco: ['☀️','🌤️','💛','🌻'] },
+  { color: '#69DB7C', bg: 'linear-gradient(135deg, #E0FFE5 0%, #A9E5A0 100%)', emoji: '🌲', label: 'Лес', deco: ['🍃','🌿','🐿️','🍄'] },
+  { color: '#74C0FC', bg: 'linear-gradient(135deg, #E0F0FF 0%, #A5D8FF 100%)', emoji: '🐠', label: 'Океан', deco: ['🐟','🐚','🦀','🫧'] },
+  { color: '#B197FC', bg: 'linear-gradient(135deg, #F0E8FF 0%, #D0BFFF 100%)', emoji: '🦋', label: 'Бабочки', deco: ['🌸','🦋','💜','✨'] },
+  { color: '#FF8787', bg: 'linear-gradient(135deg, #FFE8E8 0%, #FFC9C9 100%)', emoji: '🎈', label: 'Шарики', deco: ['🎈','🎉','🎊','🎁'] },
+  { color: '#FFD700', bg: 'linear-gradient(135deg, #FFFCE0 0%, #FFE566 100%)', emoji: '⭐', label: 'Звёзды', deco: ['⭐','🌟','💫','✨'] },
+  { color: '#63E6BE', bg: 'linear-gradient(135deg, #E0FFF5 0%, #96F2D7 100%)', emoji: '🎵', label: 'Музыка', deco: ['🎶','🎹','🎸','🥁'] },
+  { color: '#4C6EF5', bg: 'linear-gradient(135deg, #1a1a3e 0%, #0d1b3e 100%)', emoji: '🚀', label: 'Космос', deco: ['🌙','⭐','🪐','👾'] },
+];
+
+const CELEBRATION = ['⭐','🌟','✨','🎉','🎈','💫','🎊','🥳','❤️','💖'];
+
+let currentFloor = 1;
+let targetFloor = null;
+let isMoving = false;
+let doorsOpen = false;
+let doorsAnimating = false;
+let audioCtx = null;
+let moveInterval = null;
+
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playTone(freq, dur, type = 'sine', vol = 0.12) {
+  if (!audioCtx) return;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(freq, audioCtx.currentTime);
+  g.gain.setValueAtTime(vol, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(); o.stop(audioCtx.currentTime + dur);
+}
+
+function playDing() {
+  playTone(830, 0.6, 'sine', 0.18);
+  setTimeout(() => playTone(1046, 0.8, 'sine', 0.14), 200);
+}
+
+function playDoorSound() {
+  if (!audioCtx) return;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = 'sawtooth';
+  o.frequency.setValueAtTime(60, audioCtx.currentTime);
+  o.frequency.linearRampToValueAtTime(40, audioCtx.currentTime + 0.7);
+  g.gain.setValueAtTime(0.04, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.7);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(); o.stop(audioCtx.currentTime + 0.7);
+}
+
+function playDoorCloseSound() {
+  if (!audioCtx) return;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = 'sawtooth';
+  o.frequency.setValueAtTime(40, audioCtx.currentTime);
+  o.frequency.linearRampToValueAtTime(70, audioCtx.currentTime + 0.7);
+  g.gain.setValueAtTime(0.04, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.7);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(); o.stop(audioCtx.currentTime + 0.7);
+}
+
+function playMovingHum() {
+  if (!audioCtx) return;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = 'triangle';
+  o.frequency.setValueAtTime(55, audioCtx.currentTime);
+  g.gain.setValueAtTime(0.03, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.7);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(); o.stop(audioCtx.currentTime + 0.7);
+}
+
+function playFloorTick(floor) {
+  playTone(300 + floor * 50, 0.12, 'sine', 0.08);
+}
+
+function playButtonBeep() {
+  playTone(500, 0.08, 'square', 0.06);
+}
+
+function playArrivalMelody(floor) {
+  const base = 500 + floor * 40;
+  setTimeout(() => playTone(base, 0.25, 'sine', 0.15), 0);
+  setTimeout(() => playTone(base * 1.25, 0.25, 'sine', 0.15), 180);
+  setTimeout(() => playTone(base * 1.5, 0.4, 'sine', 0.18), 360);
+}
+
+/* ── Build UI ── */
+function buildButtons() {
+  const container = document.getElementById('floorButtons');
+  for (let i = FLOORS; i >= 1; i--) {
+    const btn = document.createElement('button');
+    btn.className = 'floor-btn';
+    btn.id = `fbtn-${i}`;
+    btn.textContent = i;
+    btn.style.background = FLOOR_DATA[i - 1].color;
+    btn.addEventListener('click', () => pressFloor(i));
+    container.appendChild(btn);
+  }
+}
+
+function updateDisplay(num) {
+  document.getElementById('displayNum').textContent = num;
+}
+
+function setArrow(dir) {
+  const up = document.getElementById('arrowUp');
+  const down = document.getElementById('arrowDown');
+  up.classList.toggle('active-up', dir > 0);
+  down.classList.toggle('active-down', dir < 0);
+}
+
+function updateScene(floor) {
+  const scene = document.getElementById('scene');
+  const d = FLOOR_DATA[floor - 1];
+  scene.style.background = d.bg;
+
+  scene.innerHTML = `
+    <div class="scene-number" id="sceneNum">${floor}</div>
+    <div class="scene-emoji" id="sceneEmoji">${d.emoji}</div>
+    <div class="scene-label" id="sceneLabel">${d.label}</div>
+  `;
+
+  d.deco.forEach((em, i) => {
+    const el = document.createElement('div');
+    el.className = 'scene-deco';
+    el.textContent = em;
+    const positions = [
+      { top: '12%', left: '10%' },
+      { top: '15%', right: '10%' },
+      { bottom: '18%', left: '12%' },
+      { bottom: '15%', right: '12%' },
+    ];
+    Object.assign(el.style, positions[i]);
+    el.style.animationDelay = `${i * 0.4}s`;
+    scene.appendChild(el);
+  });
+}
+
+function revealScene() {
+  requestAnimationFrame(() => {
+    const num = document.getElementById('sceneNum');
+    const emoji = document.getElementById('sceneEmoji');
+    const label = document.getElementById('sceneLabel');
+    const decos = document.querySelectorAll('.scene-deco');
+    if (num) num.classList.add('visible');
+    if (emoji) emoji.classList.add('visible');
+    if (label) label.classList.add('visible');
+    decos.forEach(d => d.classList.add('visible'));
+  });
+}
+
+/* ── Door control ── */
+function openDoors(callback) {
+  if (doorsAnimating) return;
+  doorsAnimating = true;
+  playDoorSound();
+
+  const left = document.getElementById('doorLeft');
+  const right = document.getElementById('doorRight');
+  left.classList.add('open-left');
+  right.classList.add('open-right');
+  doorsOpen = true;
+
+  setTimeout(() => {
+    doorsAnimating = false;
+    if (callback) callback();
+  }, 850);
+}
+
+function closeDoors(callback) {
+  if (doorsAnimating) return;
+  doorsAnimating = true;
+  playDoorCloseSound();
+
+  const left = document.getElementById('doorLeft');
+  const right = document.getElementById('doorRight');
+  left.classList.remove('open-left');
+  right.classList.remove('open-right');
+  doorsOpen = false;
+
+  setTimeout(() => {
+    doorsAnimating = false;
+    if (callback) callback();
+  }, 850);
+}
+
+/* ── Movement ── */
+function startMoving(target) {
+  if (isMoving || target === currentFloor) return;
+  targetFloor = target;
+
+  const btnEl = document.getElementById(`fbtn-${target}`);
+  if (btnEl) btnEl.classList.add('lit');
+
+  if (doorsOpen) {
+    closeDoors(() => beginTravel());
+  } else {
+    beginTravel();
+  }
+}
+
+function beginTravel() {
+  isMoving = true;
+  const dir = targetFloor > currentFloor ? 1 : -1;
+  setArrow(dir);
+
+  moveInterval = setInterval(() => {
+    playMovingHum();
+    currentFloor += dir;
+    updateDisplay(currentFloor);
+    playFloorTick(currentFloor);
+    updateScene(currentFloor);
+
+    if (currentFloor === targetFloor) {
+      clearInterval(moveInterval);
+      moveInterval = null;
+      setArrow(0);
+      isMoving = false;
+
+      const btnEl = document.getElementById(`fbtn-${targetFloor}`);
+      if (btnEl) btnEl.classList.remove('lit');
+
+      playDing();
+
+      setTimeout(() => {
+        openDoors(() => {
+          revealScene();
+          playArrivalMelody(currentFloor);
+          celebrate();
+        });
+      }, 400);
+
+      targetFloor = null;
+    }
+  }, 600);
+}
+
+/* ── Button handlers ── */
+function pressFloor(floor) {
+  initAudio();
+  playButtonBeep();
+  if (isMoving || doorsAnimating) return;
+  if (floor === currentFloor && !doorsOpen) {
+    openDoors(() => {
+      revealScene();
+      playArrivalMelody(currentFloor);
+    });
+    return;
+  }
+  if (floor === currentFloor && doorsOpen) return;
+  startMoving(floor);
+}
+
+function pressUp() {
+  initAudio();
+  playButtonBeep();
+  if (isMoving || doorsAnimating) return;
+  if (currentFloor < FLOORS) startMoving(currentFloor + 1);
+}
+
+function pressDown() {
+  initAudio();
+  playButtonBeep();
+  if (isMoving || doorsAnimating) return;
+  if (currentFloor > 1) startMoving(currentFloor - 1);
+}
+
+function pressDoorOpen() {
+  initAudio();
+  playButtonBeep();
+  if (isMoving || doorsAnimating) return;
+  if (!doorsOpen) {
+    openDoors(() => {
+      revealScene();
+      playArrivalMelody(currentFloor);
+    });
+  }
+}
+
+function pressDoorClose() {
+  initAudio();
+  playButtonBeep();
+  if (isMoving || doorsAnimating) return;
+  if (doorsOpen) closeDoors();
+}
+
+/* ── Celebration ── */
+function celebrate() {
+  const shaft = document.getElementById('shaft');
+  const rect = shaft.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+
+  for (let i = 0; i < 12; i++) {
+    setTimeout(() => {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.textContent = CELEBRATION[Math.floor(Math.random() * CELEBRATION.length)];
+      const angle = (Math.PI * 2 * i) / 12 + Math.random() * 0.4;
+      const dist = 70 + Math.random() * 120;
+      p.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
+      p.style.setProperty('--dy', `${Math.sin(angle) * dist - 30}px`);
+      p.style.left = `${cx}px`;
+      p.style.top = `${cy}px`;
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 1400);
+    }, i * 50);
+  }
+}
+
+/* ── Init ── */
+buildButtons();
+updateScene(1);
+updateDisplay(1);
+
+document.body.addEventListener('click', () => initAudio(), { once: true });
+document.body.addEventListener('touchstart', () => initAudio(), { once: true });
+</script>
+</body>
+</html>
