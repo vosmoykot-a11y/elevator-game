@@ -502,6 +502,28 @@ function playArrivalMelody(floor) {
   setTimeout(() => playTone(base * 1.5, 0.4, 'sine', 0.18), 360);
 }
 
+const FLOOR_SPEECH = [
+  'Первый этаж', 'Второй этаж', 'Третий этаж', 'Четвёртый этаж',
+  'Пятый этаж', 'Шестой этаж', 'Седьмой этаж', 'Восьмой этаж',
+  'Девятый этаж', 'Десятый этаж'
+];
+
+function speakFloor(floor) {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const msg = new SpeechSynthesisUtterance(FLOOR_SPEECH[floor - 1]);
+  msg.lang = 'ru-RU';
+  msg.rate = 0.9;
+  msg.pitch = 1.1;
+  msg.volume = 1;
+
+  const voices = window.speechSynthesis.getVoices();
+  const ruVoice = voices.find(v => v.lang.startsWith('ru'));
+  if (ruVoice) msg.voice = ruVoice;
+
+  window.speechSynthesis.speak(msg);
+}
+
 /* ── Build UI ── */
 function buildButtons() {
   const container = document.getElementById('floorButtons');
@@ -644,6 +666,7 @@ function beginTravel() {
         openDoors(() => {
           revealScene();
           playArrivalMelody(currentFloor);
+          speakFloor(currentFloor);
           celebrate();
         });
       }, 400);
@@ -662,6 +685,7 @@ function pressFloor(floor) {
     openDoors(() => {
       revealScene();
       playArrivalMelody(currentFloor);
+      speakFloor(currentFloor);
     });
     return;
   }
@@ -691,6 +715,7 @@ function pressDoorOpen() {
     openDoors(() => {
       revealScene();
       playArrivalMelody(currentFloor);
+      speakFloor(currentFloor);
     });
   }
 }
@@ -730,6 +755,11 @@ function celebrate() {
 buildButtons();
 updateScene(1);
 updateDisplay(1);
+
+if ('speechSynthesis' in window) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+}
 
 document.body.addEventListener('click', () => initAudio(), { once: true });
 document.body.addEventListener('touchstart', () => initAudio(), { once: true });
