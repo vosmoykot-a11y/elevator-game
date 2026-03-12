@@ -227,9 +227,11 @@ html, body {
 .floor-buttons {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  grid-template-rows: repeat(5, 1fr);
   gap: 4px;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
 .floor-btn {
@@ -251,6 +253,8 @@ html, body {
   align-items: center;
   justify-content: center;
   min-height: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .floor-btn:active {
