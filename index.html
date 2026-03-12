@@ -43,14 +43,15 @@ html, body {
   background: #0a0a1a;
   border: 3px solid #333;
   border-radius: 12px;
-  padding: 6px 24px;
-  margin-bottom: 10px;
+  padding: 4px 20px;
+  margin-bottom: 8px;
   display: flex;
   align-items: center;
   gap: 12px;
   box-shadow: 0 0 20px rgba(0,200,255,0.15), inset 0 0 20px rgba(0,0,0,0.5);
   position: relative;
-  min-height: 50px;
+  min-height: 40px;
+  flex-shrink: 0;
 }
 
 .floor-indicator .arrow {
@@ -202,67 +203,67 @@ html, body {
 
 /* ══════ CONTROL PANEL (right side) ══════ */
 .panel {
-  width: clamp(140px, 35vw, 220px);
+  width: clamp(120px, 30vw, 200px);
   background: linear-gradient(180deg, #2c2c3a 0%, #1e1e2e 100%);
   border-left: 3px solid #444;
   display: flex;
   flex-direction: column;
-  padding: 10px 8px;
-  gap: 8px;
-  overflow-y: auto;
+  padding: 6px 5px;
+  gap: 4px;
+  overflow: hidden;
 }
 
 .panel-section-label {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   color: #666;
   text-transform: uppercase;
   letter-spacing: 2px;
   text-align: center;
-  margin-top: 2px;
+  flex-shrink: 0;
 }
 
 /* ── Floor buttons grid ── */
 .floor-buttons {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  gap: 4px;
   flex: 1;
+  min-height: 0;
 }
 
 .floor-btn {
   border: none;
-  border-radius: 14px;
+  border-radius: 12px;
   font-family: 'Nunito', sans-serif;
-  font-size: clamp(18px, 4vw, 28px);
+  font-size: clamp(16px, 3.5vw, 26px);
   font-weight: 900;
   color: white;
   cursor: pointer;
   position: relative;
   text-shadow: 1px 2px 0 rgba(0,0,0,0.3);
   box-shadow:
-    0 4px 0 rgba(0,0,0,0.25),
-    0 6px 12px rgba(0,0,0,0.2),
+    0 3px 0 rgba(0,0,0,0.25),
+    0 4px 8px rgba(0,0,0,0.2),
     inset 0 1px 0 rgba(255,255,255,0.2);
   transition: transform 0.1s, box-shadow 0.1s, filter 0.3s;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 0;
-  aspect-ratio: 1;
 }
 
 .floor-btn:active {
-  transform: translateY(3px);
+  transform: translateY(2px);
   box-shadow:
     0 1px 0 rgba(0,0,0,0.25),
-    0 2px 6px rgba(0,0,0,0.2);
+    0 2px 4px rgba(0,0,0,0.2);
 }
 
 .floor-btn.lit {
   filter: brightness(1.3);
   box-shadow:
-    0 4px 0 rgba(0,0,0,0.25),
+    0 3px 0 rgba(0,0,0,0.25),
     0 0 15px rgba(255,255,255,0.3);
 }
 
@@ -272,7 +273,7 @@ html, body {
   top: 0; left: 0; right: 0;
   height: 45%;
   background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 100%);
-  border-radius: 14px 14px 0 0;
+  border-radius: 12px 12px 0 0;
   pointer-events: none;
 }
 
@@ -280,13 +281,14 @@ html, body {
 .control-buttons {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .ctrl-btn {
   border: none;
-  border-radius: 12px;
-  font-size: clamp(18px, 3.5vw, 26px);
+  border-radius: 10px;
+  font-size: clamp(14px, 3vw, 22px);
   cursor: pointer;
   background: #3a3a4a;
   color: white;
@@ -294,7 +296,7 @@ html, body {
     0 3px 0 rgba(0,0,0,0.3),
     inset 0 1px 0 rgba(255,255,255,0.1);
   transition: transform 0.1s, box-shadow 0.1s, background 0.2s;
-  padding: 10px 0;
+  padding: 8px 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -346,14 +348,37 @@ html, body {
 }
 
 /* ══════ RESPONSIVE ══════ */
+@media (max-height: 600px) {
+  .floor-indicator { min-height: 36px; padding: 3px 16px; margin-bottom: 6px; }
+  .floor-indicator .floor-num { font-size: 22px; min-width: 40px; }
+  .floor-indicator .arrow { font-size: 14px; }
+  .elevator-view { padding: 6px; }
+  .panel { padding: 4px 4px; gap: 3px; }
+  .floor-buttons { gap: 3px; }
+  .control-buttons { gap: 3px; }
+  .ctrl-btn { padding: 6px 0; font-size: 14px; border-radius: 8px; }
+  .floor-btn { border-radius: 8px; font-size: 15px; }
+  .panel-section-label { font-size: 8px; }
+}
+
 @media (max-width: 400px) {
-  .panel { width: 120px; min-width: 120px; padding: 6px 5px; gap: 5px; }
-  .floor-buttons { gap: 4px; }
-  .control-buttons { gap: 4px; }
+  .panel { width: 110px; min-width: 110px; }
 }
 
 @media (min-width: 700px) {
   .shaft { max-width: 500px; }
+}
+
+@media (max-height: 450px) {
+  .floor-indicator { min-height: 30px; padding: 2px 12px; margin-bottom: 4px; }
+  .floor-indicator .floor-num { font-size: 18px; }
+  .elevator-view { padding: 4px; }
+  .panel { padding: 3px; gap: 2px; }
+  .floor-buttons { gap: 2px; }
+  .control-buttons { gap: 2px; }
+  .ctrl-btn { padding: 4px 0; font-size: 12px; }
+  .floor-btn { border-radius: 6px; font-size: 13px; }
+  .shaft { border-width: 2px; border-radius: 10px; }
 }
 </style>
 </head>
